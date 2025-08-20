@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"fmt"
+	"log"
 	"math/big"
 	"sort"
 	"time"
@@ -18,6 +20,10 @@ type MoneyDifference struct {
 
 // NewMoneyDifference crea una nueva instancia calculando diferencia y porcentaje
 func NewMoneyDifference(fromDate, toDate time.Time, fromAmount, toAmount *big.Float) *MoneyDifference {
+	if toDate.Before(fromDate) {
+		log.Println("Warning: ToDate is before FromDate")
+	}
+
 	diff := new(big.Float).Sub(toAmount, fromAmount)
 
 	zero := big.NewFloat(0)
@@ -37,6 +43,35 @@ func NewMoneyDifference(fromDate, toDate time.Time, fromAmount, toAmount *big.Fl
 		Difference:       diff,
 		PercentageChange: pctChange,
 	}
+}
+
+// String devuelve una representación legible de la diferencia
+func (md *MoneyDifference) String() string {
+	return fmt.Sprintf(
+		"From %s (%.2f) → To %s (%.2f) | Δ %.2f (%.2f%%)",
+		md.FromDate.Format("2006-01-02"),
+		floatValue(md.FromAmount),
+		md.ToDate.Format("2006-01-02"),
+		floatValue(md.ToAmount),
+		floatValue(md.Difference),
+		floatValue(md.PercentageChange),
+	)
+}
+
+// IsGain indica si hubo ganancia
+func (md *MoneyDifference) IsGain() bool {
+	return md.Difference.Cmp(big.NewFloat(0)) > 0
+}
+
+// IsLoss indica si hubo pérdida
+func (md *MoneyDifference) IsLoss() bool {
+	return md.Difference.Cmp(big.NewFloat(0)) < 0
+}
+
+// floatValue convierte *big.Float a float64 para impresión
+func floatValue(f *big.Float) float64 {
+	val, _ := f.Float64()
+	return val
 }
 
 // Ordenar por fecha inicial ascendente
